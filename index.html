@@ -2,11 +2,10 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <!-- 1. تم إصلاح الزوم بتمكين التكبير والتصغير -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>Bella Napoli | بيلا نابولي - المنصورة</title>
     
-    <!-- Open Graph Meta Tags للمشاركة على واتساب وفيسبوك -->
+    <!-- Open Graph Meta Tags -->
     <meta property="og:title" content="منيو مطعم بيلا نابولي - Bella Napoli المنصورة">
     <meta property="og:description" content="اطلب أشهر وألذ أنواع البيتزا والباستا الإيطالية مباشرة أونلاين.">
     <meta property="og:image" content="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1000">
@@ -15,6 +14,9 @@
     <!-- Fonts & Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Playfair+Display:ital,wght@0,600;1,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Supabase JS Client v2 -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
         :root {
@@ -731,11 +733,11 @@
                 </div>
             </div>
 
-            <!-- 6. Chicken Alfredo Pasta -->
+            <!-- 6. Chicken Alfredo Pasta (تم تحديث رابط الصورة) -->
             <div class="product-card" data-cat="pasta">
                 <div>
                     <div class="img-container">
-                        <img src="https://images.unsplash.com/photo-1621996346565-e3d5d6281318?w=600" loading="lazy" alt="Chicken Alfredo Pasta" class="product-img">
+                        <img src="https://images.unsplash.com/photo-1645112411341-6c4fd023714a?w=600" loading="lazy" alt="Chicken Alfredo Pasta" class="product-img">
                     </div>
                     <div class="product-info">
                         <div class="product-header">
@@ -858,7 +860,6 @@
             </div>
 
             <div style="border-top: 1px solid var(--border-color); padding-top: 15px;">
-                <!-- ملخص الفاتورة ورسوم التوصيل -->
                 <div class="cart-summary-box">
                     <div class="summary-line">
                         <span>المجموع الفرعي:</span>
@@ -890,9 +891,15 @@
 
     <!-- JavaScript Logic -->
     <script>
+        // إعدادات الربط مع Supabase
+        const SUPABASE_URL = "https://vorchmgatodvenvuzazz.supabase.co";
+        const SUPABASE_ANON_KEY = "ضع_المفتاح_الخاص_بك_هنا";
+        
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
         const CONFIG = {
-            deliveryFee: 20, // رسوم التوصيل بالجنيه
-            minOrder: 100,   // الحد الأدنى للطلب
+            deliveryFee: 20,
+            minOrder: 100,
             whatsappNumber: "201108342262"
         };
 
@@ -910,21 +917,17 @@
         ];
 
         let currentCategory = 'all';
-        // 2. استرجاع السلة المجهزة سابقاً من localStorage
         let cart = JSON.parse(localStorage.getItem('bella_napoli_cart')) || [];
 
-        // حفظ السلة تلقائياً
         function saveCart() {
             localStorage.setItem('bella_napoli_cart', JSON.stringify(cart));
         }
 
-        // فحص حالة فتح/غلق المطعم (12 ظهراً لـ 1 صباحاً)
         function checkOpenStatus() {
             const now = new Date();
             const hour = now.getHours();
             const elem = document.getElementById('restaurant-status');
             
-            // مفتوح من الساعة 12 ظهراً (12) وحتى 1 صباحاً (0)
             const isOpen = hour >= 12 || hour < 1;
             
             if(isOpen) {
@@ -945,7 +948,6 @@
             }, 2000);
         }
 
-        // 3. دمج البحث مع الفلترة بالقسم مع إظهار حالة عدم وجود نتائج
         function applyFilters() {
             const query = document.getElementById('search-input').value.toLowerCase().trim();
             const cards = document.querySelectorAll('.product-card');
@@ -1067,16 +1069,14 @@
             document.getElementById('cart-modal').classList.add('open');
         }
 
-        function sendOrderToWhatsApp() {
+        async function sendOrderToWhatsApp() {
             const name = document.getElementById('cust-name').value.trim();
             const rawPhone = document.getElementById('cust-phone').value;
             const address = document.getElementById('cust-address').value.trim();
             const notes = document.getElementById('cust-notes').value.trim();
             const submitBtn = document.getElementById('submit-btn');
 
-            // 4. معالجة وتنظيف رقم الهاتف المقبول بكل الصيغ (تنظيف المسافات والرموز)
             const phone = rawPhone.replace(/[\s\-\(\)\+]/g, '');
-
             const subtotal = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
 
             if(!cart || cart.length === 0) { alert('السلة فارغة!'); return; }
@@ -1085,17 +1085,27 @@
                 return; 
             }
             if(name.length < 3) { alert('يرجى كتابة الاسم الثلاثي.'); return; }
-            
-            // فحص الرقم المصري بعد التنظيف
             if(!/^01[0125][0-9]{8}$/.test(phone)) { 
                 alert('يرجى كتابة رقم موبايل مصري صحيح مكون من 11 رقم.'); 
                 return; 
             }
             if(address.length < 3) { alert('يرجى كتابة العنوان التفصيلي للوصول بالطلب.'); return; }
 
-            // 5. حماية وتجميد الزر لمنع الإرسال المكرر لفتح تابات عديدة
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري إرسال الطلب...';
+
+            try {
+                await supabaseClient.from('orders').insert([{
+                    customer_name: name,
+                    customer_phone: phone,
+                    delivery_address: address,
+                    notes: notes,
+                    items: cart,
+                    total_price: subtotal + CONFIG.deliveryFee
+                }]);
+            } catch (err) {
+                console.log("Supabase save note:", err);
+            }
 
             let msg = `*طلب جديد - بيلا نابولي (Bella Napoli) 🇮🇹*\n\n`;
             msg += `👤 *الاسم:* ${name}\n📞 *الهاتف:* ${phone}\n🏠 *العنوان:* ${address} (المنصورة)\n`;
@@ -1110,10 +1120,8 @@
             msg += `\n🛵 *التوصيل:* ${CONFIG.deliveryFee} جنيه`;
             msg += `\n💰 *الإجمالي النهائي:* ${subtotal + CONFIG.deliveryFee} جنيه`;
 
-            // فتح الواتساب
             window.open(`https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent(msg)}`, '_blank');
 
-            // تفريغ السلة بعد الطلب وإعادة تفعيل الزر بعد 3 ثواني
             setTimeout(() => {
                 cart = [];
                 saveCart();
@@ -1124,7 +1132,6 @@
             }, 3000);
         }
 
-        // تشغيل الوظائف المبدئية عند التحميل
         checkOpenStatus();
         updateCartUI();
     </script>
